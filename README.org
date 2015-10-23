@@ -1,0 +1,8 @@
+* Ido Describe Prefix Bindings
+
+  Describe and select prefix bindings with ido.
+
+  This advises =describe-prefix-bindings= to show you the bindings with =ido-completing-read=.
+  In addition, it lets you execute a given binding by choosing it in the completing read.
+
+  So, you can do =C-x r=, forget the button you want, choose =kill-rectangle= (for example), and press =RET= to execute =kill-rectangle=.
