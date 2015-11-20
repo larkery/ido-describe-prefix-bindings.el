@@ -35,7 +35,7 @@
 (defun ido-describe-prefix-bindings (_blah &rest _rest)
   (interactive)
   (let* ((buffer (current-buffer))
-         (key (this-command-keys))
+         (key (this-command-keys-vector))
          (prefix (make-vector (1- (length key)) 0))
          bindings
          choices
