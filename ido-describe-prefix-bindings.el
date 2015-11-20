@@ -36,7 +36,7 @@
   (interactive)
   (let* ((buffer (current-buffer))
          (key (this-command-keys))
-         (prefix (make-string (1- (length key)) 0))
+         (prefix (make-vector (1- (length key)) 0))
          bindings
          choices
          the-command
