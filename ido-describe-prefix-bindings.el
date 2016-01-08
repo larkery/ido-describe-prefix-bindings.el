@@ -59,6 +59,7 @@
     (save-excursion
       (with-current-buffer (get-buffer-create " *ido-describe-prefix-bindings*")
         (erase-buffer)
+        (insert re)
         (describe-buffer-bindings buffer prefix)
         ;; we want to iterate over the lines and think about them
         (save-match-data
@@ -68,7 +69,7 @@
           (while (search-forward-regexp re nil t 1)
             (ignore-errors
               (let* ((keyname (match-string 1))
-                     (command-name (match-string 3))
+                     (command-name (match-string 2))
                      (command (intern command-name)))
                 (when (commandp command)
                   (setf longest-command (max longest-command (length command-name))
