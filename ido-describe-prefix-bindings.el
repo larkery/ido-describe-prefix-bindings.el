@@ -50,15 +50,10 @@
     (setf re
           (rx-to-string `(sequence
                           bol
-
                           (group ,(key-description prefix)
-                                 (one-or-more
-                                  (optional space)
-                                  (group (one-or-more (not space)))))
-
-                          "  "
-                          (maximal-match (zero-or-more space))
-                          (group (one-or-more (not space)))
+                                 (one-or-more any))
+                          (maximal-match (one-or-more " "))
+                          (group (maximal-match (one-or-more (not space))))
                           eol)))
 
     (save-excursion
