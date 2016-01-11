@@ -50,58 +50,59 @@
     (setf re
           (rx-to-string `(sequence
                           bol
-                          (group ,(key-description prefix)
-                                 (one-or-more any))
-                          (maximal-match (one-or-more " "))
-                          (group (maximal-match (one-or-more (not space))))
+                          (minimal-match (group ,(key-description prefix)
+                                                (one-or-more any)))
+                          (maximal-match (one-or-more "\t"))
+                          (group (maximal-match (one-or-more (not blank))))
                           eol)))
 
     (save-excursion
-      (with-current-buffer (get-buffer-create " *ido-describe-prefix-bindings*")
-        (erase-buffer)
-        (insert re)
-        (describe-buffer-bindings buffer prefix)
-        ;; we want to iterate over the lines and think about them
-        (save-match-data
-          (goto-char 0)
-          (search-forward "Bindings Starting")
+      (let ((indent-tabs-mode t))
+        (with-current-buffer (get-buffer-create " *ido-describe-prefix-bindings*")
+         (erase-buffer)
+         (insert re)
+         (describe-buffer-bindings buffer prefix)
+         ;; we want to iterate over the lines and think about them
+         (save-match-data
+           (goto-char 0)
+           (search-forward "Bindings Starting")
 
-          (while (search-forward-regexp re nil t 1)
-            (ignore-errors
-              (let* ((keyname (match-string 1))
-                     (command-name (match-string 2))
-                     (command (intern command-name)))
-                (when (commandp command)
-                  (setf longest-command (max longest-command (length command-name))
-                        longest-binding (max longest-binding (length keyname)))
-                  (push (list keyname command
-                              ;; get first line
-                              (car (split-string (or (documentation command)
-                                                     "undocumented") "\n"))
-                              ) bindings)))))
-          (dolist (x bindings)
-            (let ((key (nth 0 x))
-                  (command (nth 1 x))
-                  (description (nth 2 x)))
-              (add-face-text-property 0 (length key) 'font-lock-keyword-face nil key)
-              (push
-               (cons
-                (concat
-                 (s-pad-right longest-binding " " key)
-                 "  "
-                 (s-pad-right longest-command " " (symbol-name command))
-                 "  "
-                 description)
-                command)
-               choices)))
+           (while (search-forward-regexp re nil t 1)
+             (ignore-errors
+               (let* ((keyname (match-string 1))
+                      (command-name (match-string 2))
+                      (command (intern command-name)))
+                 (when (commandp command)
+                   (setf longest-command (max longest-command (length command-name))
+                         longest-binding (max longest-binding (length keyname)))
+                   (push (list keyname command
+                               ;; get first line
+                               (car (split-string (or (documentation command)
+                                                      "undocumented") "\n"))
+                               ) bindings)))))
+           (dolist (x bindings)
+             (let ((key (nth 0 x))
+                   (command (nth 1 x))
+                   (description (nth 2 x)))
+               (add-face-text-property 0 (length key) 'font-lock-keyword-face nil key)
+               (push
+                (cons
+                 (concat
+                  (s-pad-right longest-binding " " key)
+                  "  "
+                  (s-pad-right longest-command " " (symbol-name command))
+                  "  "
+                  description)
+                 command)
+                choices)))
 
-          (let* ((result
-                  (ido-completing-read "Prefix commands: "
+           (let* ((result
+                   (ido-completing-read "Prefix commands: "
                                         choices
                                         nil
                                         t))
-                 (command (cdr (assoc result choices))))
-            (setf the-command command)))))
+                  (command (cdr (assoc result choices))))
+             (setf the-command command))))))
     (when the-command (call-interactively the-command))))
 
 ;;;###autoload
