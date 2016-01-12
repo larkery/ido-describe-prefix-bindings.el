@@ -32,6 +32,16 @@
 
 ;;; Code:
 
+(defgroup ido-describe-prefix-bindings nil
+  "Uses ido or other completing-read to let you interactively choose prefix-bound keys."
+  :group 'ido)
+
+(defcustom ido-describe-prefix-bindings-fill t
+  "Whether or not to fill the command key, name and description. True is better with
+ido-grid-mode, ido-vertical-mode, ivy etc. False is better with plain ido."
+  :type 'boolean
+  :group 'ido-describe-prefix-bindings)
+
 (defun ido-describe-prefix-bindings (_blah &rest _rest)
   (interactive)
   (let* ((buffer (current-buffer))
@@ -88,19 +98,23 @@
                (push
                 (cons
                  (concat
-                  (s-pad-right longest-binding " " key)
+                  (if ido-describe-prefix-bindings-fill
+                      (s-pad-right longest-binding " " key)
+                    key)
                   "  "
-                  (s-pad-right longest-command " " (symbol-name command))
+                  (if ido-describe-prefix-bindings-fill
+                      (s-pad-right longest-command " " (symbol-name command))
+                    (symbol-name command))
                   "  "
                   description)
                  command)
                 choices)))
 
            (let* ((result
-                   (ido-completing-read "Prefix commands: "
-                                        choices
-                                        nil
-                                        t))
+                   (completing-read "Prefix commands: "
+                                    choices
+                                    nil
+                                    t))
                   (command (cdr (assoc result choices))))
              (setf the-command command))))))
     (when the-command (call-interactively the-command))))
