@@ -42,11 +42,9 @@ ido-grid-mode, ido-vertical-mode, ivy etc. False is better with plain ido."
   :type 'boolean
   :group 'ido-describe-prefix-bindings)
 
-(defun ido-describe-prefix-bindings (_blah &rest _rest)
-  (interactive)
+(defun ido-describe-prefix-bindings-starting-with (key)
   (let* ((buffer (current-buffer))
-         (key (this-command-keys-vector))
-         (prefix (make-vector (1- (length key)) 0))
+         (prefix (and key (make-vector (1- (length key)) 0)))
          bindings
          choices
          the-command
@@ -75,7 +73,7 @@ ido-grid-mode, ido-vertical-mode, ivy etc. False is better with plain ido."
          ;; we want to iterate over the lines and think about them
          (save-match-data
            (goto-char 0)
-           (search-forward "Bindings Starting")
+           (search-forward "---")
 
            (while (search-forward-regexp re nil t 1)
              (ignore-errors
@@ -111,13 +109,23 @@ ido-grid-mode, ido-vertical-mode, ivy etc. False is better with plain ido."
                 choices)))
 
            (let* ((result
-                   (completing-read "Prefix commands: "
+                   (completing-read (if key
+                                        (concat "Prefix " (key-description prefix) ": ")
+                                      "All commands:")
                                     choices
                                     nil
                                     t))
                   (command (cdr (assoc result choices))))
              (setf the-command command))))))
     (when the-command (call-interactively the-command))))
+
+(defun ido-describe-prefix-bindings (_blah &rest _rest)
+  (interactive)
+  (ido-describe-prefix-bindings-starting-with (this-command-keys-vector)))
+
+(defun ido-describe-mode-bindings ()
+  (interactive)
+  (ido-describe-prefix-bindings-starting-with nil))
 
 ;;;###autoload
 (define-minor-mode ido-describe-prefix-bindings-mode
