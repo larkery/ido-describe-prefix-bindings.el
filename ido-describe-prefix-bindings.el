@@ -77,10 +77,24 @@ ido-grid-mode, ido-vertical-mode, ivy etc. False is better with plain ido."
 
            (while (search-forward-regexp re nil t 1)
              (ignore-errors
-               (let* ((keyname (match-string 1))
-                      (command-name (match-string 2))
-                      (command (intern command-name)))
-                 (when (commandp command)
+               (let* ((keyname (s-trim (match-string 1)))
+                      (command-name (s-trim (match-string 2)))
+                      (command (intern-soft command-name)))
+                 (when (and (commandp command)
+                            (not (eq 'ignore command))
+                            (not (eq 'self-insert-command command))
+                            (not (s-blank? keyname))
+                            (not (string-match (rx bos (or "<remap>"
+                                                           "<compose-last-chars>"
+                                                           "<mode-line>"
+                                                           "<vertical-line>"
+                                                           "<header-line>"
+                                                           (seq "<"
+                                                                (zero-or-more any)
+                                                                "mouse-"
+                                                                (one-or-more digit)
+                                                                ">")
+                                                           )) keyname)))
                    (setf longest-command (max longest-command (length command-name))
                          longest-binding (max longest-binding (length keyname)))
                    (push (list keyname command
@@ -93,20 +107,18 @@ ido-grid-mode, ido-vertical-mode, ivy etc. False is better with plain ido."
                    (command (nth 1 x))
                    (description (nth 2 x)))
                (add-face-text-property 0 (length key) 'font-lock-keyword-face nil key)
-               (push
-                (cons
-                 (concat
-                  (if ido-describe-prefix-bindings-fill
-                      (s-pad-right longest-binding " " key)
-                    key)
-                  "  "
-                  (if ido-describe-prefix-bindings-fill
-                      (s-pad-right longest-command " " (symbol-name command))
-                    (symbol-name command))
-                  "  "
-                  description)
-                 command)
-                choices)))
+               (let ((row (concat
+                           (if ido-describe-prefix-bindings-fill
+                               (s-pad-right longest-binding " " key)
+                             key)
+                           "  "
+                           (if ido-describe-prefix-bindings-fill
+                               (s-pad-right longest-command " " (symbol-name command))
+                             (symbol-name command))
+                           "  "
+                           description)))
+
+                 (push (cons row command) choices))))
 
            (let* ((result
                    (completing-read (if key
