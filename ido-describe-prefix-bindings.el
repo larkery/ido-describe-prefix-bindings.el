@@ -65,70 +65,71 @@ ido-grid-mode, ido-vertical-mode, ivy etc. False is better with plain ido."
                           eol)))
 
     (save-excursion
-      (let ((indent-tabs-mode t))
-        (with-current-buffer (get-buffer-create " *ido-describe-prefix-bindings*")
-         (erase-buffer)
-         (insert re)
-         (describe-buffer-bindings buffer prefix)
-         ;; we want to iterate over the lines and think about them
-         (save-match-data
-           (goto-char 0)
-           (search-forward "---")
+      (with-current-buffer (get-buffer-create " *ido-describe-prefix-bindings*")
+        (let ((indent-tabs-mode t))
 
-           (while (search-forward-regexp re nil t 1)
-             (ignore-errors
-               (let* ((keyname (s-trim (match-string 1)))
-                      (command-name (s-trim (match-string 2)))
-                      (command (intern-soft command-name)))
-                 (when (and (commandp command)
-                            (not (eq 'ignore command))
-                            (not (eq 'self-insert-command command))
-                            (not (s-blank? keyname))
-                            (not (string-match (rx bos (or "<remap>"
-                                                           "<compose-last-chars>"
-                                                           "<mode-line>"
-                                                           "<vertical-line>"
-                                                           "<header-line>"
-                                                           (seq "<"
-                                                                (zero-or-more any)
-                                                                "mouse-"
-                                                                (one-or-more digit)
-                                                                ">")
-                                                           )) keyname)))
-                   (setf longest-command (max longest-command (length command-name))
-                         longest-binding (max longest-binding (length keyname)))
-                   (push (list keyname command
-                               ;; get first line
-                               (car (split-string (or (documentation command)
-                                                      "undocumented") "\n"))
-                               ) bindings)))))
-           (dolist (x bindings)
-             (let ((key (nth 0 x))
-                   (command (nth 1 x))
-                   (description (nth 2 x)))
-               (add-face-text-property 0 (length key) 'font-lock-keyword-face nil key)
-               (let ((row (concat
-                           (if ido-describe-prefix-bindings-fill
-                               (s-pad-right longest-binding " " key)
-                             key)
-                           "  "
-                           (if ido-describe-prefix-bindings-fill
-                               (s-pad-right longest-command " " (symbol-name command))
-                             (symbol-name command))
-                           "  "
-                           description)))
+          (erase-buffer)
+          (insert re)
+          (describe-buffer-bindings buffer prefix)
+          ;; we want to iterate over the lines and think about them
+          (save-match-data
+            (goto-char 0)
+            (search-forward "---")
 
-                 (push (cons row command) choices))))
+            (while (search-forward-regexp re nil t 1)
+              (ignore-errors
+                (let* ((keyname (s-trim (match-string 1)))
+                       (command-name (s-trim (match-string 2)))
+                       (command (intern-soft command-name)))
+                  (when (and (commandp command)
+                             (not (eq 'ignore command))
+                             (not (eq 'self-insert-command command))
+                             (not (s-blank? keyname))
+                             (not (string-match (rx bos (or "<remap>"
+                                                            "<compose-last-chars>"
+                                                            "<mode-line>"
+                                                            "<vertical-line>"
+                                                            "<header-line>"
+                                                            (seq "<"
+                                                                 (zero-or-more any)
+                                                                 "mouse-"
+                                                                 (one-or-more digit)
+                                                                 ">")
+                                                            )) keyname)))
+                    (setf longest-command (max longest-command (length command-name))
+                          longest-binding (max longest-binding (length keyname)))
+                    (push (list keyname command
+                                ;; get first line
+                                (car (split-string (or (documentation command)
+                                                       "undocumented") "\n"))
+                                ) bindings)))))
+            (dolist (x bindings)
+              (let ((key (nth 0 x))
+                    (command (nth 1 x))
+                    (description (nth 2 x)))
+                (add-face-text-property 0 (length key) 'font-lock-keyword-face nil key)
+                (let ((row (concat
+                            (if ido-describe-prefix-bindings-fill
+                                (s-pad-right longest-binding " " key)
+                              key)
+                            "  "
+                            (if ido-describe-prefix-bindings-fill
+                                (s-pad-right longest-command " " (symbol-name command))
+                              (symbol-name command))
+                            "  "
+                            description)))
 
-           (let* ((result
-                   (completing-read (if key
-                                        (concat "Prefix " (key-description prefix) ": ")
-                                      "All commands:")
-                                    choices
-                                    nil
-                                    t))
-                  (command (cdr (assoc result choices))))
-             (setf the-command command))))))
+                  (push (cons row command) choices))))
+
+            (let* ((result
+                    (completing-read (if key
+                                         (concat "Prefix " (key-description prefix) ": ")
+                                       "All commands:")
+                                     choices
+                                     nil
+                                     t))
+                   (command (cdr (assoc result choices))))
+              (setf the-command command))))))
     (when the-command (call-interactively the-command))))
 
 (defun ido-describe-prefix-bindings (_blah &rest _rest)
